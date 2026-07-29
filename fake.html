@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A colorful and modern fake profile and suspicious link detector.">
+    <title>TrustLens | Smart Profile & Link Detector</title>
+    <style>
+        :root {
+            --bg1: #5b21b6;
+            --bg2: #2563eb;
+            --bg3: #0f766e;
+            --panel: rgba(255, 255, 255, 0.92);
+            --text: #0f172a;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --primary: #7c3aed;
+            --accent: #ec4899;
+            --safe: #16a34a;
+            --danger: #dc2626;
+            --shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            min-height: 100vh;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(236, 72, 153, 0.35), transparent 24%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.28), transparent 30%),
+                linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 48%, var(--bg3) 100%);
+            overflow-x: hidden;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.45;
+            pointer-events: none;
+            animation: float 10s ease-in-out infinite;
+        }
+
+        .orb.one { width: 260px; height: 260px; background: #fb923c; top: -60px; left: -70px; }
+        .orb.two { width: 240px; height: 240px; background: #8b5cf6; bottom: -40px; right: -60px; animation-delay: 2s; }
+        .orb.three { width: 180px; height: 180px; background: #38bdf8; top: 35%; right: 12%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-18px) scale(1.04); }
+        }
+
+        .app-shell {
+            position: relative;
+            width: 100%;
+            max-width: 1180px;
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,0.55);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            backdrop-filter: blur(14px);
+        }
+
+        .hero {
+            background: linear-gradient(120deg, #fdf2f8 0%, #eff6ff 55%, #f0fdfa 100%);
+            padding: 30px 32px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .brand-badge, .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .brand-badge {
+            color: var(--primary);
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .status-pill {
+            color: #0f766e;
+            background: rgba(15, 118, 110, 0.1);
+        }
+
+        .hero h1 {
+            margin: 16px 0 10px;
+            font-size: clamp(1.8rem, 3vw, 2.7rem);
+            line-height: 1.15;
+            color: #111827;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 760px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .stat-chip {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            padding: 28px 32px 32px;
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: white;
+            padding: 22px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .scan-card h2, .info-card h2 {
+            margin: 0 0 6px;
+            font-size: 1.2rem;
+            color: #111827;
+        }
+
+        .scan-card p, .info-card p {
+            color: var(--muted);
+            margin-top: 0;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0 12px;
+            flex-wrap: wrap;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+            transform: translateY(-1px);
+        }
+
+        button {
+            width: 100%;
+            border: none;
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.2);
+        }
+
+        button:hover { transform: translateY(-2px); }
+
+        .helper-text {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .status-box {
+            display: none;
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #f8fafc, #f5f3ff);
+        }
+
+        .status-box.safe {
+            border-color: rgba(22, 163, 74, 0.3);
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            color: #166534;
+        }
+
+        .status-box.suspicious {
+            border-color: rgba(220, 38, 38, 0.25);
+            background: linear-gradient(135deg, #fef2f2, #fff7ed);
+            color: #991b1b;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: white;
+            color: #334155;
+            margin-bottom: 8px;
+            font-weight: 700;
+            border: 1px solid #e2e8f0;
+        }
+
+        .status-box h3 { margin: 0 0 6px; font-size: 1.05rem; }
+        .status-box p { margin: 0; line-height: 1.6; }
+
+        .feature-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .feature-item {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f8fafc, #eef2ff);
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .feature-item strong { color: #111827; }
+
+        @media (max-width: 900px) {
+            .content { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .hero, .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb one"></div>
+    <div class="orb two"></div>
+    <div class="orb three"></div>
+
+    <div class="app-shell">
+        <div class="hero">
+            <div class="brand-row">
+                <div class="brand-badge">✨ TrustLens</div>
+                <div class="status-pill" id="networkStatus">Live scan ready</div>
+            </div>
+            <h1>Spot fake profiles and scammy links before they trick you.</h1>
+            <p>Turn a plain check into a bright, playful safety experience. Paste a profile URL or website link and get a fast trust verdict in seconds.</p>
+            <div class="hero-stats">
+                <div class="stat-chip">⚡ Instant review</div>
+                <div class="stat-chip">🎨 Colorful interface</div>
+                <div class="stat-chip">🛡️ Smart fallback mode</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="card scan-card">
+                <h2>Run a quick scan</h2>
+                <p>Choose the check type and paste the URL you want to review.</p>
+
+                <div class="controls">
+                    <select id="modeSelect">
+                        <option value="auto">Auto Detect</option>
+                        <option value="profile">Profile Check</option>
+                        <option value="link">Link Check</option>
+                    </select>
+                </div>
+
+                <input type="text" id="urlInput" placeholder="Paste a profile URL or website link here">
+                <button onclick="scanUrl()">Scan Now</button>
+
+                <div id="loading" class="loading">Analyzing the target...</div>
+
+                <div id="resultBox" class="status-box">
+                    <span class="badge" id="engineBadge">Engine</span>
+                    <h3 id="statusText">Status</h3>
+                    <p id="reasonText">Your result will appear here.</p>
+                </div>
+
+                <div class="helper-text">
+                    Example profile: https://instagram.com/demo<br>
+                    Example link: https://example.com/login
+                </div>
+            </div>
+
+            <div class="card info-card">
+                <h2>What this checker looks for</h2>
+                <div class="feature-list">
+                    <div class="feature-item"><strong>Profile clues:</strong> checks whether a profile link looks like a real social platform or a suspicious fake account.</div>
+                    <div class="feature-item"><strong>Link clues:</strong> highlights risky signs like HTTP, shorteners, and scam-style keywords.</div>
+                    <div class="feature-item"><strong>Quick verdict:</strong> gives a simple safe or suspicious recommendation with reasoning.</div>
+                    <div class="feature-item"><strong>Offline-friendly:</strong> if the backend is unavailable, the page still gives a local analysis result.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socialPattern = /(instagram\.com|twitter\.com|x\.com|facebook\.com|tiktok\.com|linkedin\.com)/i;
+        const suspiciousWords = ['bot', 'fake', 'free', 'gift', 'claim', 'verify', 'login', 'click', 'winner', 'earn'];
+        const shorteners = ['bit.ly', 'tinyurl.com', 't.co', 'ow.ly', 'goo.gl'];
+
+        function setStatus(message, tone) {
+            const pill = document.getElementById('networkStatus');
+            pill.textContent = message;
+            pill.style.background = tone === 'offline'
+                ? 'rgba(220, 38, 38, 0.12)'
+                : 'rgba(15, 118, 110, 0.1)';
+            pill.style.color = tone === 'offline' ? '#b91c1c' : '#0f766e';
+        }
+
+        function analyzeLocally(url, mode) {
+            const target = url.trim().toLowerCase();
+            if (!target) {
+                return { engine: 'Local Analysis', status: 'Unknown', reason: 'Please enter a URL or profile link.' };
+            }
+
+            if (!target.startsWith('http://') && !target.startsWith('https://')) {
+                return { engine: 'Local Analysis', status: 'Suspicious', reason: 'This does not look like a complete web address. Add http:// or https://.' };
+            }
+
+            if (mode === 'profile') {
+                if (suspiciousWords.some(word => target.includes(word))) {
+                    return { engine: 'Profile Engine', status: 'Suspicious', reason: 'The profile link contains words often used in fake or spam accounts.' };
+                }
+                if (socialPattern.test(target)) {
+                    return { engine: 'Profile Engine', status: 'Safe', reason: 'The profile URL points to a familiar social platform and looks normal.' };
+                }
+                return { engine: 'Profile Engine', status: 'Suspicious', reason: 'The profile URL does not match a known social pattern, so it should be treated carefully.' };
+            }
+
+            if (mode === 'link') {
+                if (target.startsWith('http://')) {
+                    return { engine: 'Link Engine', status: 'Suspicious', reason: 'The link uses HTTP instead of HTTPS, which is unsafe and often used by phishing pages.' };
+                }
+                if (shorteners.some(shortener => target.includes(shortener))) {
+                    return { engine: 'Link Engine', status: 'Suspicious', reason: 'The link uses a URL shortener, which can hide the real destination.' };
+                }
+                if (suspiciousWords.some(word => target.includes(word))) {
+                    return { engine: 'Link Engine', status: 'Suspicious', reason: 'The link contains words commonly used in phishing or scam messages.' };
+                }
+                return { engine: 'Link Engine', status: 'Safe', reason: 'The link uses HTTPS and does not show obvious phishing indicators.' };
+            }
+
+            if (socialPattern.test(target)) {
+                return { engine: 'Profile Engine', status: 'Safe', reason: 'The target appears to be a familiar social profile URL.' };
+            }
+
+            if (target.startsWith('http://')) {
+                return { engine: 'Link Engine', status: 'Suspicious', reason: 'The link uses HTTP instead of HTTPS, which is unsafe and often used by phishing pages.' };
+            }
+            if (shorteners.some(shortener => target.includes(shortener))) {
+                return { engine: 'Link Engine', status: 'Suspicious', reason: 'The link uses a URL shortener, which can hide the real destination.' };
+            }
+            if (suspiciousWords.some(word => target.includes(word))) {
+                return { engine: 'Link Engine', status: 'Suspicious', reason: 'The link contains words commonly used in phishing or scam messages.' };
+            }
+
+            return { engine: 'Link Engine', status: 'Safe', reason: 'The link uses HTTPS and does not show obvious phishing indicators.' };
+        }
+
+        function renderResult(data) {
+            document.getElementById('engineBadge').textContent = data.engine;
+            document.getElementById('statusText').textContent = data.status;
+            document.getElementById('reasonText').textContent = data.reason;
+
+            const resultBox = document.getElementById('resultBox');
+            resultBox.className = 'status-box ' + (data.status === 'Safe' ? 'safe' : data.status === 'Unknown' ? '' : 'suspicious');
+            resultBox.style.display = 'block';
+        }
+
+        async function scanUrl() {
+            const url = document.getElementById('urlInput').value.trim();
+            const mode = document.getElementById('modeSelect').value;
+            if (!url) {
+                renderResult({ engine: 'Input Needed', status: 'Unknown', reason: 'Please enter a URL or profile link first.' });
+                return;
+            }
+
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            setStatus('Checking...', 'online');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, mode })
+                });
+
+                if (!response.ok) throw new Error('Backend responded with an error');
+                const data = await response.json();
+                renderResult({ engine: data.engine, status: data.status, reason: data.reason });
+                setStatus('Live backend connected', 'online');
+            } catch (error) {
+                const fallback = analyzeLocally(url, mode);
+                renderResult({ engine: fallback.engine, status: fallback.status, reason: `${fallback.reason} (Local fallback used because the backend is unavailable.)` });
+                setStatus('Offline fallback active', 'offline');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        document.getElementById('urlInput').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                scanUrl();
+            }
+        });
+    </script>
+</body>
+</html>
