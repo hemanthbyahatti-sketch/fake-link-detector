@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".venv"
+		},
+		{
+			"path": "__pycache__"
+		},
+		{
+			"path": "tests"
+		}
+	]
+}
